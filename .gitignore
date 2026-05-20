@@ -1,0 +1,82 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# UV
+.uv/
+uv.lock
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Audio / Transcripts (privacy — NEVER commit user data)
+*.wav
+*.mp3
+*.m4a
+*.opus
+*.flac
+meetings/
+transcripts/
+recordings/
+
+# SQLite databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Models (large binaries)
+models/
+*.bin
+*.pt
+*.onnx
+*.safetensors
+
+# Config with secrets
+settings.yaml
+settings.local.yaml
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+*.spec
+PyInstaller/
+
+# Test artifacts
+tests/fixtures/personal/
+.benchmarks/
+
+# Brainstorming session artifacts (if applicable)
+.superpowers/
