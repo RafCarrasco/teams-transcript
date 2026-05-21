@@ -67,5 +67,17 @@ def search(
         typer.echo(f"{meeting_id}  {snippet}")
 
 
+@app.command()
+def run() -> None:
+    """Inicia o app de bandeja — botão flutuante + transcrição (MVP).
+
+    Precisa das extras de áudio, UI e transcrição:
+    ``uv sync --extra audio --extra ui --extra transcribe``.
+    """
+    from tt.app import App
+
+    raise SystemExit(App().run())
+
+
 if __name__ == "__main__":
     app()
