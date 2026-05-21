@@ -94,23 +94,23 @@ Roadmap em fases de 1-3 dias cada. Cada fase termina com entregável testável e
 
 ---
 
-## Fase 5: Summary via Claude (P1)
+## Fase 5: Summary via Gemini (P1)
 
 **Objetivo:** gerar resumo estruturado pós-call.
 
 **Entregável:**
-- Markdown final inclui seção "Resumo gerado por Claude" com TL;DR, decisões, action items
-- Prompt caching ativo
+- Markdown final inclui seção "Resumo gerado por IA" com TL;DR, decisões, action items
+- Provider plugável via `settings.yaml` (Gemini default, free tier)
 - Configurable (PT vs EN output)
 
 **Tarefas:**
-- [ ] Adicionar dep: `anthropic`
-- [ ] Implementar `summary/claude_client.py`
-- [ ] Implementar `summary/prompts.py` com cache
+- [ ] Adicionar dep: `google-genai`
+- [ ] Implementar `summary/gemini_client.py`
+- [ ] Implementar `summary/prompts.py` (system + user prompt)
 - [ ] Implementar `summary/extractors.py` — parse output estruturado
 - [ ] Integrar no flow pós-call automaticamente
-- [ ] Settings: model selection, API key
-- [ ] Test: comparar qualidade Sonnet vs Haiku em 5 calls reais
+- [ ] Settings: provider/model selection, API key (`GEMINI_API_KEY`)
+- [ ] Test: validar qualidade do resumo em 5 calls reais
 
 **Tempo estimado:** 1 dia
 
