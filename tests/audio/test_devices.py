@@ -1,9 +1,9 @@
 """Testes de `tt.audio.devices`.
 
-Como `sounddevice`/`soundcard` não estão instalados neste ambiente, os
-testes verificam o comportamento de degradação: o módulo deve importar
-normalmente, e as funções que dependem do backend devem falhar com uma
-mensagem de erro clara.
+O módulo deve importar sem `sounddevice`/`soundcard` (import preguiçoso). Os
+testes de degradação ("erro claro sem backend") só fazem sentido quando a
+extra `audio` NÃO está instalada — quando ela está (ambiente do MVP), esses
+testes são pulados.
 """
 
 from __future__ import annotations
@@ -11,6 +11,15 @@ from __future__ import annotations
 import importlib
 
 import pytest
+
+
+def _skip_if_installed(module_name: str) -> None:
+    """Pula o teste se a lib de backend estiver instalada."""
+    try:
+        importlib.import_module(module_name)
+    except ImportError:
+        return
+    pytest.skip(f"{module_name} instalado — caminho de erro não aplicável")
 
 
 def test_module_imports_without_audio_libs():
@@ -33,6 +42,7 @@ def test_audio_device_dataclass_fields():
 
 
 def test_list_input_devices_raises_clear_error_without_backend():
+    _skip_if_installed("sounddevice")
     from tt.audio.devices import AudioBackendError, list_input_devices
 
     with pytest.raises(AudioBackendError) as exc:
@@ -44,6 +54,7 @@ def test_list_input_devices_raises_clear_error_without_backend():
 
 
 def test_find_default_mic_raises_clear_error_without_backend():
+    _skip_if_installed("sounddevice")
     from tt.audio.devices import AudioBackendError, find_default_mic
 
     with pytest.raises(AudioBackendError) as exc:
@@ -52,6 +63,7 @@ def test_find_default_mic_raises_clear_error_without_backend():
 
 
 def test_find_loopback_device_raises_clear_error_without_backend():
+    _skip_if_installed("soundcard")
     from tt.audio.devices import AudioBackendError, find_loopback_device
 
     with pytest.raises(AudioBackendError) as exc:
