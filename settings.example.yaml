@@ -35,10 +35,14 @@ storage:
   keep_audio: false           # apaga o WAV após transcrever
   retention_days: 365         # 0 = guardar para sempre
 
+output:
+  dir: ~/Documents/teams-transcript   # pasta dos .txt de transcrição (MVP)
+
 ui:
   hotkey: ctrl+shift+t        # atalho global start/stop
   show_floating_window: false
   notify_on_complete: true
+  button_corner: bottom-right # canto inicial do botão flutuante
 
 detection:
   auto_detect_teams: true     # oferece gravar quando detecta call do Teams
