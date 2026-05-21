@@ -31,13 +31,13 @@ def test_module_imports_without_ml_libs(module_name):
     assert module is not None
 
 
-def test_ml_libs_really_absent():
-    """Confirma a premissa do ambiente: as libs de ML NÃO estão instaladas.
+def test_diarization_libs_absent():
+    """pyannote/silero (extra `diarize`, pós-MVP) não estão no ambiente do MVP.
 
-    Se algum dia forem instaladas, este teste falha de propósito — um lembrete
-    de que o smoke test acima passou a testar menos do que parece.
+    `faster-whisper` (extra `transcribe`) FAZ parte do MVP e pode estar
+    instalada; a diarização foi adiada para pós-MVP e fica numa extra à parte.
     """
-    for lib in ("faster_whisper", "pyannote.audio", "silero_vad"):
+    for lib in ("pyannote.audio", "silero_vad"):
         with pytest.raises(ImportError):
             importlib.import_module(lib)
 
@@ -54,7 +54,18 @@ def test_whisper_engine_instantiates_without_lib():
 
 
 def test_whisper_transcribe_raises_clear_error_without_lib():
-    """Transcrever sem a lib levanta ImportError com mensagem acionável."""
+    """Sem faster-whisper, transcrever levanta ImportError acionável.
+
+    Só roda quando a extra `transcribe` NÃO está instalada — no ambiente do
+    MVP, com faster-whisper presente, este caminho de erro não se aplica.
+    """
+    try:
+        import faster_whisper  # noqa: F401
+
+        pytest.skip("faster-whisper instalado — caminho de erro não aplicável")
+    except ImportError:
+        pass
+
     from tt.transcribe.whisper_engine import WhisperEngine
 
     with pytest.raises(ImportError, match="faster-whisper"):

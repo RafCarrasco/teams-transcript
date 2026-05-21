@@ -108,10 +108,13 @@ class WhisperEngine:
         logger.info("Transcrevendo {}", wav_path)
         # `segments` é um gerador preguiçoso; iterar é o que de fato roda a
         # inferência. `info` traz idioma detectado, duração etc.
+        # vad_filter=True usa o VAD (Silero ONNX) embutido do faster-whisper
+        # para dropar silêncio — não exige torch nem o pacote silero-vad.
         segments, info = model.transcribe(
             str(wav_path),
             language=language,
             initial_prompt=self.initial_prompt,
+            vad_filter=True,
         )
         logger.debug(
             "Idioma detectado: {} (p={:.2f})",
@@ -135,3 +138,26 @@ class WhisperEngine:
 
         logger.info("Whisper produziu {} segments", len(result))
         return result
+
+    def transcribe_array(self, audio, sample_rate: int) -> list[dict]:
+        """Transcreve um array de áudio mono (float32) já em memória.
+
+        Conveniência para o pipeline estéreo: cada canal já está separado em
+        memória, então grava-se um WAV temporário e reaproveita-se
+        :meth:`transcribe`.
+
+        Args:
+            audio: array NumPy mono float32.
+            sample_rate: taxa de amostragem do array, em Hz.
+        """
+        import tempfile
+
+        import soundfile as sf
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp_path = tmp.name
+        try:
+            sf.write(tmp_path, audio, sample_rate)
+            return self.transcribe(tmp_path)
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)

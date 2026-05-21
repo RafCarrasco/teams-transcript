@@ -17,11 +17,15 @@ ainda não ter sido implementado.
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 from loguru import logger
 
 from tt.transcribe.aligner import align, merge_consecutive
+from tt.transcribe.channels import label_and_merge, split_stereo_wav
+from tt.transcribe.txt_writer import write_txt
+from tt.transcribe.whisper_engine import WhisperEngine
 
 
 def _format_timestamp(seconds: float) -> str:
@@ -184,3 +188,50 @@ def transcribe_file(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(markdown, encoding="utf-8")
     logger.info("Transcrição escrita em {} ({} blocos)", output_path, len(merged))
+
+
+def transcribe_call(
+    wav_path: str | Path,
+    txt_path: str | Path,
+    started_at: datetime,
+    *,
+    model: str = "medium",
+    compute_type: str = "int8",
+    device: str = "auto",
+    language: str = "auto",
+) -> Path:
+    """Transcreve um WAV estéreo de call e escreve o `.txt` (fluxo do MVP).
+
+    O WAV estéreo tem o microfone no canal L e o loopback do sistema no canal
+    R. Cada canal é transcrito separadamente; os segments do mic viram speaker
+    "Você", os do loopback viram "Outros", e tudo é fundido por timestamp.
+
+    Args:
+        wav_path: WAV estéreo de entrada (L=mic, R=loopback).
+        txt_path: arquivo `.txt` de saída.
+        started_at: hora de início da gravação (vai no cabeçalho do `.txt`).
+        model: tamanho do modelo Whisper.
+        compute_type: precisão do CTranslate2.
+        device: ``auto``/``cpu``/``cuda``.
+        language: ``auto``/``pt``/``en``.
+
+    Returns:
+        O caminho do `.txt` escrito.
+    """
+    wav_path = Path(wav_path)
+    logger.info("Transcrevendo call de {}", wav_path)
+
+    mic, loopback, sample_rate = split_stereo_wav(wav_path)
+    engine = WhisperEngine(
+        model=model, compute_type=compute_type, device=device, language=language
+    )
+
+    logger.info("Transcrevendo canal do microfone…")
+    mic_segs = engine.transcribe_array(mic, sample_rate)
+    logger.info("Transcrevendo canal do sistema…")
+    loop_segs = engine.transcribe_array(loopback, sample_rate)
+
+    merged = label_and_merge(mic_segs, loop_segs)
+    result = write_txt(merged, txt_path, started_at)
+    logger.info("Transcrição escrita em {} ({} segments)", result, len(merged))
+    return result

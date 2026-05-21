@@ -7,6 +7,8 @@ monkeypatch. O que não dá para testar aqui é a inferência real dos modelos.
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from tt.transcribe import pipeline as pl
 from tt.transcribe.pipeline import (
     _fallback_markdown,
@@ -171,3 +173,42 @@ def test_render_markdown_prefers_summary_formatter(monkeypatch):
     result = pl._render_markdown([{"start": 0.0, "end": 1.0, "text": "x"}])
 
     assert result == "FORMATTER USADO"
+
+
+# --------------------------------------------------------------------------
+# transcribe_call — fluxo estéreo -> .txt (MVP), com engine fake
+# --------------------------------------------------------------------------
+
+
+def test_transcribe_call_writes_txt(tmp_path, monkeypatch):
+    """transcribe_call transcreve os 2 canais e escreve o .txt rotulado."""
+    import numpy as np
+
+    # Fake do split: dois sinais quaisquer + sample rate.
+    monkeypatch.setattr(
+        pl, "split_stereo_wav", lambda p: (np.zeros(10), np.zeros(10), 16000)
+    )
+
+    calls: list[int] = []
+
+    class FakeEngine:
+        def __init__(self, *a, **k):
+            pass
+
+        def transcribe_array(self, audio, sample_rate):
+            calls.append(len(calls))
+            # 1ª chamada = canal mic; 2ª = canal loopback.
+            if len(calls) == 1:
+                return [{"start": 4.0, "end": 6.0, "text": "bom dia"}]
+            return [{"start": 0.0, "end": 3.0, "text": "ola"}]
+
+    monkeypatch.setattr(pl, "WhisperEngine", FakeEngine)
+
+    txt = tmp_path / "out.txt"
+    pl.transcribe_call(
+        tmp_path / "fake.wav", txt, started_at=datetime(2026, 5, 21, 14, 30)
+    )
+
+    content = txt.read_text(encoding="utf-8")
+    assert "[00:00:00] Outros: ola" in content
+    assert "[00:00:04] Você: bom dia" in content
