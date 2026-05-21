@@ -6,7 +6,7 @@
 
 ## O que é
 
-Ferramenta desktop local (Windows-first) que **transcreve chamadas do Microsoft Teams sem entrar na call e sem aparecer pra ninguém**. Captura o áudio do sistema (o que você ouve) + microfone (o que você fala), transcreve com Whisper local, separa quem disse o quê, e gera resumo com action items via Claude.
+Ferramenta desktop local (Windows-first) que **transcreve chamadas do Microsoft Teams sem entrar na call e sem aparecer pra ninguém**. Captura o áudio do sistema (o que você ouve) + microfone (o que você fala), transcreve com Whisper local, separa quem disse o quê, e gera resumo com action items via Gemini (free tier).
 
 **Único pra quem usa.** Outros participantes nunca veem nada — não há bot, não há aviso visual no Teams, não há integração com a Microsoft Graph API.
 
@@ -40,7 +40,7 @@ Ferramenta desktop local (Windows-first) que **transcreve chamadas do Microsoft 
 | Captura áudio | `sounddevice` + `soundcard` | Cross-platform, WASAPI loopback Windows |
 | Transcrição | `faster-whisper` (medium-int8) | Local, qualidade alta, 2-3x realtime em CPU |
 | Diarização | `pyannote.audio` 3.x | State-of-the-art pra identificar speakers |
-| Resumo | Anthropic Claude (Sonnet 4) | Já está no fluxo do Rafael; prompt caching |
+| Resumo | Google Gemini Flash (free tier) | Grátis, cloud, sem cartão; boa qualidade PT-BR |
 | UI | PyQt6 + system tray | Maduro no Windows, tray nativo |
 | Storage | SQLite + markdown files | Zero-config, FTS5 pra search |
 | Hotkey global | `pynput` | Cross-platform |
@@ -50,7 +50,7 @@ Ferramenta desktop local (Windows-first) que **transcreve chamadas do Microsoft 
 
 1. **Silenciosa** — não aparece na call, não usa bot, nem permissão do Teams
 2. **Local-first** — áudio NUNCA sai da máquina
-3. **Privacidade** — só o resumo (opcional) usa Claude API
+3. **Privacidade** — só o resumo (opcional) usa Gemini API (free tier)
 4. **Sem fricção** — atalho global, system tray, auto-detect calls
 
 ### Não-objetivos (explicitamente fora de escopo)
@@ -75,7 +75,7 @@ teams-transcript/
 ├── src/tt/
 │   ├── audio/          # WASAPI loopback + mic
 │   ├── transcribe/     # whisper + pyannote + aligner
-│   ├── summary/        # Claude SDK + prompts + extractors
+│   ├── summary/        # Gemini SDK + prompts + extractors
 │   ├── storage/        # SQLite + FTS5 + meetings CRUD
 │   ├── ui/             # PyQt6 tray + floating window
 │   ├── detection/      # Teams process monitoring
@@ -103,7 +103,7 @@ MVP estimado: **7-10 dias** de trabalho focado (fases 1-5).
 | 2 | Transcrição offline (WAV → MD) | 1-2 dias |
 | 3 | Pipeline live + UI tray + hotkey | 2-3 dias |
 | 4 | Diarização + speaker labels | 1-2 dias |
-| 5 | Claude integration (resumo) | 1 dia |
+| 5 | Gemini integration (resumo) | 1 dia |
 | 6 | Auto-detection Teams + polish | 2-3 dias |
 | 7 | Search + histórico | 2 dias |
 | 8 | Packaging .exe | 2-3 dias |
@@ -118,10 +118,10 @@ Detalhes em [`docs/roadmap.md`](docs/roadmap.md).
 
 - **Setup:** ~7-10 dias dev time
 - **HuggingFace token (pyannote):** grátis
-- **Anthropic API:** já tem
-- **Operação:** ~$0.01-0.02 por hora de transcrição (Sonnet + cache)
+- **Gemini API:** grátis (free tier do Google, sem cartão)
+- **Operação:** $0 (Gemini free tier)
 - **Storage:** ~10-50 MB por hora local
-- **Total mensal estimado:** < $5/mês (50h de calls)
+- **Total mensal estimado:** ~$0/mês (free tier; custo só de storage local)
 
 ---
 

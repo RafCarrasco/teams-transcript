@@ -61,19 +61,23 @@ Avaliação técnica das opções consideradas para cada camada da stack. Docume
 
 | Provider | Modelo | Custo (input/output) | Veredito |
 |---|---|---|---|
-| **Anthropic Claude** | Sonnet 4 | $3 / $15 por 1M tokens | ✅ Escolhido (Rafael já usa) |
-| Anthropic Claude | Haiku 4 | $0.80 / $4 por 1M | ⚠️ alternativa pra calls curtas |
-| OpenAI GPT-4o | | $2.50 / $10 por 1M | ❌ Rafael trabalha com ecossistema Anthropic |
-| OpenAI GPT-4o-mini | | $0.15 / $0.60 | ❌ |
-| Local (Llama 3.1 70B) | | Grátis (após setup) | ⚠️ requer GPU forte; muita engenharia |
+| **Google Gemini** | `gemini-2.5-flash` | **Free tier — $0** (sob rate limit) | ✅ Escolhido (grátis, cloud, sem cartão) |
+| Anthropic Claude | Haiku 4 | $0.80 / $4 por 1M | ⚠️ alternativa paga; billing à parte |
+| Anthropic Claude | Sonnet 4 | $3 / $15 por 1M | ⚠️ alternativa paga; melhor qualidade |
+| OpenAI GPT-4o-mini | — | $0.15 / $0.60 por 1M | ⚠️ alternativa paga barata |
+| Local (Llama 3.1 70B) | — | Grátis (após setup) | ❌ requer GPU forte; muita engenharia |
 
-**Per call estimate:**
-- Call de 1h ≈ 6000 palavras ≈ 8000 tokens input
-- Summary output ≈ 500-1000 tokens
-- Sonnet 4: ~$0.025/call (sem cache), ~$0.005 (com cache hit)
-- Haiku 4: ~$0.006/call sem cache
+**Per call estimate (call de 1h ≈ 8000 tokens input + 500-1000 output):**
+- Gemini 2.5 Flash (free tier): **$0/call** — dentro da cota gratuita
+- gpt-4o-mini: ~$0.002/call · Haiku 4: ~$0.01/call · Sonnet 4: ~$0.03/call
 
-**Decisão:** Sonnet default + setting pra trocar pra Haiku.
+**Importante — desmistificação:** assinatura ChatGPT Plus / Claude Pro ($20/mês)
+**NÃO** dá acesso à API. São sistemas de billing separados — a API cobra por token,
+com cartão à parte. Não existe forma oficial de usar a assinatura paga via API.
+O free tier do Gemini é a única opção cloud genuinamente $0.
+
+**Decisão:** Gemini 2.5 Flash (free tier) como default. O campo `provider` no
+`settings.yaml` permite trocar pra Claude/OpenAI depois sem mudar a arquitetura.
 
 ---
 
@@ -170,7 +174,7 @@ language: Python 3.11+
 dependencies:
   audio: [sounddevice, soundcard, soundfile, numpy]
   ml: [faster-whisper, pyannote.audio, silero-vad]
-  llm: [anthropic]
+  llm: [google-genai]
   ui: [PyQt6, pystray, pynput]
   utils: [typer, loguru, pydantic-settings, psutil]
   storage: sqlite (builtin) + plain markdown files

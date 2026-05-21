@@ -15,7 +15,7 @@ Aplicação desktop local que captura o áudio do Microsoft Teams sem entrar na 
 2. Ativa o app via atalho global (ou ele detecta a call e auto-inicia)
 3. Durante a call, o app captura o áudio que sai dos alto-falantes (= todos os outros falando) + o microfone (= Rafael falando)
 4. Transcreve em paralelo, mostra preview opcional numa janela flutuante
-5. Quando a call acaba, dispara o Claude pra gerar resumo + action items
+5. Quando a call acaba, dispara o Gemini pra gerar resumo + action items
 6. Salva tudo em markdown local + indexa pra busca
 
 **Não-objetivos (explicitamente fora de escopo):**
@@ -67,7 +67,7 @@ Aplicação desktop local que captura o áudio do Microsoft Teams sem entrar na 
 | Latência (live preview) | < 5s do áudio falado pro texto na tela |
 | CPU durante transcrição | < 30% num laptop médio (com Whisper medium quantizado) |
 | RAM | < 2GB total |
-| Privacidade | Áudio NUNCA sai do disco do usuário. Só resumo (opcional) vai pro Claude. |
+| Privacidade | Áudio NUNCA sai do disco do usuário. Só resumo (opcional) vai pro Gemini. |
 | Latência (resumo) | < 30s pós-call pra 1h de transcrição |
 | Armazenamento | ~10MB/h de transcrição (markdown + áudio opcional) |
 | Compatibilidade | Windows 10/11 primeiro; macOS depois; Linux opcional |
@@ -97,7 +97,7 @@ Aplicação desktop local que captura o áudio do Microsoft Teams sem entrar na 
 | Loopback Windows | `pycaw` ou `soundcard` | Acessa saída de áudio do sistema (o que Teams toca) |
 | Transcrição | `faster-whisper` | Whisper otimizado via CTranslate2, suporta GPU/CPU, INT8 |
 | Diarização | `pyannote.audio` 3.x | State of the art, multi-speaker, HuggingFace token |
-| LLM | `anthropic` Python SDK | Claude Sonnet pra resumo; Claude Haiku pra extração rápida |
+| LLM | `google-genai` SDK | Gemini 2.5 Flash (free tier) pra resumo pós-call |
 | UI desktop | `PyQt6` | Tray icon, hotkeys, floating window — maduro no Windows |
 | Hotkey global | `pynput` ou `keyboard` | Captura tecla mesmo com foco em outra janela |
 | Storage | SQLite (`sqlite3` builtin) + filesystem | Sem dep externa, fácil backup |
@@ -165,8 +165,8 @@ Aplicação desktop local que captura o áudio do Microsoft Teams sem entrar na 
 │                                       │ (on call end)               │
 │                                       ▼                             │
 │                          ┌──────────────────────────┐               │
-│                          │  Claude API              │               │
-│                          │  (Anthropic SDK)         │               │
+│                          │  Gemini API              │               │
+│                          │  (google-genai SDK)      │               │
 │                          │  - resumo TL;DR          │               │
 │                          │  - decisões              │               │
 │                          │  - action items          │               │
@@ -296,7 +296,7 @@ segments, info = model.transcribe(
 
 ---
 
-## Resumo gerado por Claude
+## Resumo gerado por IA
 
 **TL;DR:**
 - [...]
@@ -314,11 +314,11 @@ segments, info = model.transcribe(
 
 **Implementação:** writer streaming, append-only. Cada chunk transcrito adiciona ao arquivo em disco. Se app crashar, transcript fica salva até onde processou.
 
-### 6.5 Summary Generation (Claude)
+### 6.5 Summary Generation (Gemini)
 
 **Responsabilidade:** pós-call, transformar transcrição bruta em insights estruturados.
 
-**Modelo:** `claude-sonnet-4` (qualidade pra extração de decisões) ou `claude-haiku-4` (mais barato pra resumos simples).
+**Modelo:** `gemini-2.5-flash` (free tier do Google — $0, boa qualidade pra extração de decisões PT/EN).
 
 **Prompt structure:**
 
@@ -346,9 +346,12 @@ Transcrição:
 """
 ```
 
-**Caching:** uso do prompt caching do Anthropic API pro system prompt — economiza ~80% do custo em runs repetidos.
+**Custo:** free tier do Gemini = **$0 por call** (dentro da cota gratuita). Gemini suporta
+context caching opcional, mas no free tier não há custo a economizar.
 
-**Custo estimado:** ~$0.01 por hora de transcrição (cache hit) com Sonnet, $0.002 com Haiku.
+**Limite:** o free tier tem rate limit (requisições/min + cota diária de tokens). Resumo é
+1 call curta pós-call, então o limite raramente é atingido em uso normal. Se exceder:
+fila com retry/backoff, ou trocar `provider` pra opção paga no `settings.yaml`.
 
 ### 6.6 UI (System Tray + Optional Floating Window)
 
@@ -422,7 +425,7 @@ teams-transcript/
 │       │   └── pipeline.py         # orchestration
 │       ├── summary/
 │       │   ├── __init__.py
-│       │   ├── claude_client.py    # Anthropic SDK
+│       │   ├── gemini_client.py    # google-genai SDK
 │       │   ├── prompts.py          # system + user prompts
 │       │   ├── extractors.py       # TL;DR, decisions, actions
 │       │   └── formatter.py        # markdown rendering
@@ -498,11 +501,11 @@ diarization:
 
 summary:
   enabled: true
-  provider: anthropic
-  model: claude-sonnet-4
-  api_key: ${ANTHROPIC_API_KEY}
+  provider: google
+  model: gemini-2.5-flash
+  api_key: ${GEMINI_API_KEY}
   language: pt               # output language for summary
-  enable_caching: true
+  enable_caching: false      # free tier: nada a cachear
 
 storage:
   meetings_dir: ~/Documents/teams-transcripts
@@ -546,7 +549,7 @@ Whisper:        text1  text2  text3  text4         textN
                      │                                │
                      │             ┌──────────────────┘
                      │             ▼
-                     │      [Claude API call]
+                     │      [Gemini API call]
                      │             │
                      ▼             ▼
               transcript.md ← summary.md merge
@@ -576,7 +579,7 @@ Detalhes em [`roadmap.md`](roadmap.md), mas em resumo:
 | 2 | Transcrição offline (WAV → markdown) | 1-2 dias |
 | 3 | Pipeline live + UI tray + hotkey | 2-3 dias |
 | 4 | Diarização + speaker labels | 1-2 dias |
-| 5 | Claude integration (summary) | 1 dia |
+| 5 | Gemini integration (summary) | 1 dia |
 | 6 | Auto-detection do Teams + polish | 2-3 dias |
 | 7 | macOS support | 3-4 dias |
 | 8 | Linux support (opcional) | 2-3 dias |
@@ -593,7 +596,7 @@ Detalhes em [`roadmap.md`](roadmap.md), mas em resumo:
 | Loopback Windows muda em versões futuras do Windows | Baixa | Médio | Camada de abstração; suporte a múltiplas APIs (WASAPI / WDM) |
 | Pyannote acuracidade em call de baixa qualidade | Alta | Médio | Fallback: sem diarização, só texto contínuo |
 | Política corporativa proíbe gravação | Média | Alto | Warning na primeira execução; opt-in explícito |
-| Custo Claude API alto se calls forem longas | Baixa | Baixo | Cache + opção de usar Haiku em vez de Sonnet |
+| Free tier do Gemini atinge rate limit | Baixa | Baixo | Resumo = 1 call curta/reunião; fila + retry se exceder; opção de provider pago |
 | User esquece de iniciar gravação | Alta | Médio | Auto-detection (Fase 6) |
 | Crash durante gravação perde transcript | Média | Alto | Append-only writer + checkpoints SQLite a cada 30s |
 | GPU CUDA não disponível | Alta (laptops) | Baixo | CPU fallback com modelo quantizado |
@@ -634,13 +637,13 @@ Detalhes em [`roadmap.md`](roadmap.md), mas em resumo:
 ### Setup inicial (one-time)
 - Dev time: ~7-10 dias pra MVP (fases 1-5)
 - HuggingFace token (pyannote): grátis
-- Anthropic API key: já tem
+- Gemini API key: grátis (Google AI Studio, sem cartão)
 
 ### Operação (recorrente)
 - Compute local: $0 (roda na máquina)
-- Claude API (resumos): ~$0.01-0.02 por hora de transcrição com Sonnet 4 + cache
+- Gemini API (resumos): $0 (free tier do Google)
 - Storage local: ~10-50 MB por hora (markdown + opcional WAV comprimido)
-- **Total mensal estimado:** < $5/mês mesmo com 50h de calls/mês
+- **Total mensal estimado:** ~$0/mês (free tier; custo só de storage local)
 
 ---
 

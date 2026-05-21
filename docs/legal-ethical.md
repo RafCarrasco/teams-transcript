@@ -81,7 +81,7 @@ A arquitetura proposta já incorpora salvaguardas:
 
 | Salvaguarda | Como funciona |
 |---|---|
-| Local-first | Áudio nunca sai do disco do usuário; só resumo (opcional) usa Claude |
+| Local-first | Áudio nunca sai do disco do usuário; só resumo (opcional) usa Gemini |
 | Warning na primeira execução | UI mostra texto explicando responsabilidade do usuário em disclosure |
 | Setting opt-out de áudio raw | Após transcrever, pode deletar o WAV automaticamente |
 | Sem cloud sync por default | Storage local; sync manual via export |
