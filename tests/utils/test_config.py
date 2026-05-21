@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -262,3 +263,23 @@ def test_load_settings_missing_file_raises(tmp_path):
     """Path explícito inexistente levanta erro."""
     with pytest.raises(FileNotFoundError):
         load_settings(tmp_path / "nao_existe.yaml")
+
+
+# --------------------------------------------------------------------------
+# seção output + ui.button_corner
+# --------------------------------------------------------------------------
+def test_output_section_defaults():
+    """A seção `output` existe com default em ~/Documents/teams-transcript."""
+    s = Settings()
+    assert s.output.dir == Path("~/Documents/teams-transcript").expanduser()
+
+
+def test_ui_button_corner_default():
+    """`ui.button_corner` tem default bottom-right."""
+    assert Settings().ui.button_corner == "bottom-right"
+
+
+def test_invalid_button_corner_rejected():
+    """`ui.button_corner` fora do conjunto é rejeitado."""
+    with pytest.raises(ValidationError):
+        UIConfig(button_corner="middle")

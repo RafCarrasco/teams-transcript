@@ -128,12 +128,30 @@ class StorageConfig(_Section):
         return v.expanduser()
 
 
+class OutputConfig(_Section):
+    """Seção ``output`` — onde os arquivos .txt de transcrição são salvos."""
+
+    # validate_default: roda o validator também no default, garantindo que
+    # `OutputConfig().dir` já venha expandido (sem `~`).
+    dir: Path = Field(
+        default=Path("~/Documents/teams-transcript"), validate_default=True
+    )
+
+    @field_validator("dir")
+    @classmethod
+    def _expand_dir(cls, v: Path) -> Path:
+        return v.expanduser()
+
+
 class UIConfig(_Section):
-    """Seção ``ui`` — atalho global e janela flutuante."""
+    """Seção ``ui`` — atalho global, janela flutuante e botão flutuante."""
 
     hotkey: str = "ctrl+shift+t"
     show_floating_window: bool = False
     notify_on_complete: bool = True
+    button_corner: Literal["top-left", "top-right", "bottom-left", "bottom-right"] = (
+        "bottom-right"
+    )
 
 
 class DetectionConfig(_Section):
@@ -163,6 +181,7 @@ class Settings(BaseModel):
     diarization: DiarizationConfig = Field(default_factory=DiarizationConfig)
     summary: SummaryConfig = Field(default_factory=SummaryConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
+    output: OutputConfig = Field(default_factory=OutputConfig)
     ui: UIConfig = Field(default_factory=UIConfig)
     detection: DetectionConfig = Field(default_factory=DetectionConfig)
 
@@ -287,6 +306,7 @@ __all__ = [
     "DiarizationConfig",
     "SummaryConfig",
     "StorageConfig",
+    "OutputConfig",
     "UIConfig",
     "DetectionConfig",
     "Settings",
