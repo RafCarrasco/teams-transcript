@@ -1,0 +1,45 @@
+# teams-transcript — configuração de exemplo.
+# Copie para `settings.yaml` e ajuste. Variáveis ${VAR} vêm do ambiente / .env.
+
+audio:
+  sample_rate: 16000          # Hz — Whisper espera 16 kHz mono
+  channels: mono              # mono | stereo
+  loopback_enabled: true      # captura saída do sistema (o que você ouve)
+  mic_enabled: true           # captura microfone (o que você fala)
+  chunk_seconds: 30           # tamanho do chunk no pipeline live
+
+transcribe:
+  model: medium               # tiny | base | small | medium | large-v3
+  compute_type: int8          # int8 | int8_float16 | float16
+  device: auto                # auto | cpu | cuda
+  language: auto              # auto | pt | en
+  vad_enabled: true           # dropa silêncio antes do Whisper (Silero VAD)
+
+diarization:
+  enabled: true
+  user_baseline_path: ~/.config/teams-transcript/voice_baseline.wav
+  max_speakers: 6
+  huggingface_token: ${HF_TOKEN}
+
+summary:
+  enabled: true
+  provider: google            # google | anthropic | openai
+  model: gemini-2.5-flash     # free tier do Google AI Studio
+  api_key: ${GEMINI_API_KEY}
+  language: pt                # idioma do resumo gerado
+  enable_caching: false       # free tier: nada a cachear
+
+storage:
+  data_dir: ~/.local/share/teams-transcript
+  db_path: ~/.local/share/teams-transcript/meetings.db
+  keep_audio: false           # apaga o WAV após transcrever
+  retention_days: 365         # 0 = guardar para sempre
+
+ui:
+  hotkey: ctrl+shift+t        # atalho global start/stop
+  show_floating_window: false
+  notify_on_complete: true
+
+detection:
+  auto_detect_teams: true     # oferece gravar quando detecta call do Teams
+  poll_interval_seconds: 5
