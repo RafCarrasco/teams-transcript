@@ -15,13 +15,24 @@ uv run pytest -q             # roda a suíte completa
 uv run ruff check src tests  # lint
 uv run tt --help             # CLI
 
-# Extras pesados (instalar quando for mexer nessas camadas):
-uv sync --extra audio        # sounddevice, soundcard, soundfile
-uv sync --extra transcribe   # faster-whisper, pyannote, silero
-uv sync --extra ui           # PyQt6, pynput
+# MVP — app de bandeja (precisa das 3 extras):
+uv sync --extra audio --extra ui --extra transcribe
+uv run tt run
+
+# Extras: audio (sounddevice/soundcard/soundfile), ui (PyQt6/pynput),
+# transcribe (faster-whisper), diarize (pyannote/silero — pós-MVP).
 ```
 
 Python 3.11/3.12 (ML libs ainda não cobrem 3.13+). `uv` cuida da versão.
+
+## MVP
+
+O MVP é `tt run`: app de bandeja → botão flutuante detecta call do Teams →
+grava mic + loopback → transcreve com faster-whisper → gera `.txt`. Sem nuvem.
+Spec: [`docs/superpowers/specs/2026-05-21-mvp-transcricao-txt-design.md`](docs/superpowers/specs/2026-05-21-mvp-transcricao-txt-design.md).
+
+Fora do MVP, **dormindo** no repo (pós-MVP): `summary/` (resumo via Gemini),
+`storage/` (SQLite + busca), `transcribe/diarize.py` (pyannote).
 
 ## Arquitetura
 
